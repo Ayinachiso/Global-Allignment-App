@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Needleman-Wunsch Sequence Alignment System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>Needleman-Wunsch Sequence Alignment</h1>
+                <p class="subtitle">Global sequence alignment using dynamic programming</p>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Input Section -->
+            <section class="section input-section">
+                <h2>Input Sequences</h2>
+                
+                <div class="input-group">
+                    <label for="seq1">Sequence 1:</label>
+                    <textarea id="seq1" placeholder="Enter first sequence (e.g., GAATTCAGTTA)" rows="3"></textarea>
+                    <small id="seq1-info" class="info-text"></small>
+                </div>
+
+                <div class="input-group">
+                    <label for="seq2">Sequence 2:</label>
+                    <textarea id="seq2" placeholder="Enter second sequence (e.g., GGATCGA)" rows="3"></textarea>
+                    <small id="seq2-info" class="info-text"></small>
+                </div>
+
+                <!-- Parameters Section -->
+                <div class="parameters-section">
+                    <h3>Scoring Parameters</h3>
+                    
+                    <div class="param-grid">
+                        <div class="param-group">
+                            <label for="matchScore">Match Score:</label>
+                            <div class="input-with-reset">
+                                <input type="number" id="matchScore" value="5" min="-100" max="100">
+                                <button class="reset-btn" onclick="resetMatchScore()" title="Reset to default">Reset</button>
+                            </div>
+                            <small>Score for matching characters (typically positive)</small>
+                        </div>
+
+                        <div class="param-group">
+                            <label for="mismatchPenalty">Mismatch Penalty:</label>
+                            <div class="input-with-reset">
+                                <input type="number" id="mismatchPenalty" value="-3" min="-100" max="100">
+                                <button class="reset-btn" onclick="resetMismatchPenalty()" title="Reset to default">Reset</button>
+                            </div>
+                            <small>Penalty for mismatching characters (typically negative)</small>
+                        </div>
+
+                        <div class="param-group">
+                            <label for="gapPenalty">Gap Penalty:</label>
+                            <div class="input-with-reset">
+                                <input type="number" id="gapPenalty" value="-4" min="-100" max="100">
+                                <button class="reset-btn" onclick="resetGapPenalty()" title="Reset to default">Reset</button>
+                            </div>
+                            <small>Penalty for gap insertion (typically negative)</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Examples Section -->
+                <div class="examples-section">
+                    <h3>Quick Examples</h3>
+                    <div id="examplesContainer" class="examples-grid"></div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="button-group">
+                    <button id="alignBtn" class="btn btn-primary" onclick="performAlignment()">
+                        Align Sequences
+                    </button>
+                    <button id="clearBtn" class="btn btn-secondary" onclick="clearAll()">
+                        Clear All
+                    </button>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section id="resultsSection" class="section results-section hidden">
+                <h2>Alignment Results</h2>
+
+                <!-- Score Summary -->
+                <div class="score-summary">
+                    <div class="score-card">
+                        <h3 id="optimalScore" class="score-value">0</h3>
+                        <p class="score-label">Optimal Score</p>
+                    </div>
+                    <div class="score-card">
+                        <h3 id="similarityScore" class="score-value">0%</h3>
+                        <p class="score-label">Similarity</p>
+                    </div>
+                    <div class="score-card">
+                        <h3 id="matchesCount" class="score-value">0</h3>
+                        <p class="score-label">Matches</p>
+                    </div>
+                    <div class="score-card">
+                        <h3 id="mismatchesCount" class="score-value">0</h3>
+                        <p class="score-label">Mismatches</p>
+                    </div>
+                    <div class="score-card">
+                        <h3 id="gapsCount" class="score-value">0</h3>
+                        <p class="score-label">Gaps</p>
+                    </div>
+                </div>
+
+                <!-- Aligned Sequences Display -->
+                <div class="alignment-display">
+                    <h3>Aligned Sequences</h3>
+                    <div class="alignment-box">
+                        <div class="alignment-row">
+                            <span class="seq-label">Seq 1:</span>
+                            <code id="alignedSeq1" class="sequence-text"></code>
+                        </div>
+                        <div class="alignment-row">
+                            <span class="seq-label">Match:</span>
+                            <code id="matchIndicators" class="match-text"></code>
+                        </div>
+                        <div class="alignment-row">
+                            <span class="seq-label">Seq 2:</span>
+                            <code id="alignedSeq2" class="sequence-text"></code>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Matrix Visualization -->
+                <div class="matrix-section">
+                    <h3>Scoring Matrix</h3>
+                    <div class="matrix-controls">
+                        <label>
+                            <input type="checkbox" id="highlightPath" checked onchange="togglePathHighlight()">
+                            Highlight optimal path
+                        </label>
+                        <label>
+                            <input type="checkbox" id="showLabels" checked onchange="toggleMatrixLabels()">
+                            Show sequence labels
+                        </label>
+                    </div>
+                    <div id="matrixContainer" class="matrix-container">
+                        <canvas id="matrixCanvas"></canvas>
+                    </div>
+                    <small class="matrix-note">Drag to pan, scroll to zoom. Green cells mark the traceback path.</small>
+                </div>
+
+                <!-- Detailed Analysis -->
+                <div class="analysis-section">
+                    <h3>Detailed Analysis</h3>
+                    <div class="tabs">
+                        <button class="tab-btn active" onclick="switchTab('analysis')">Analysis</button>
+                        <button class="tab-btn" onclick="switchTab('explanation')">Step-by-Step</button>
+                        <button class="tab-btn" onclick="switchTab('info')">Information</button>
+                    </div>
+
+                    <div id="analysis" class="tab-content active">
+                        <div class="analysis-box" id="analysisContent"></div>
+                    </div>
+
+                    <div id="explanation" class="tab-content">
+                        <div class="explanation-box" id="explanationContent"></div>
+                    </div>
+
+                    <div id="info" class="tab-content">
+                        <div class="info-box" id="infoContent"></div>
+                    </div>
+                </div>
+
+                <!-- Export Options -->
+                <div class="export-section">
+                    <h3>Export Results</h3>
+                    <div class="button-group">
+                        <button class="btn btn-secondary" onclick="exportToJSON()">
+                            Export JSON
+                        </button>
+                        <button class="btn btn-secondary" onclick="exportToCSV()">
+                            Export CSV
+                        </button>
+                        <button class="btn btn-secondary" onclick="exportToText()">
+                            Export Text
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Loading Indicator -->
+            <div id="loadingIndicator" class="loading-indicator hidden">
+                <div class="spinner"></div>
+                <p>Processing alignment...</p>
+            </div>
+
+            <!-- Error Message -->
+            <div id="errorMessage" class="error-message hidden"></div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>CSC 442 - Needleman-Wunsch Sequence Alignment System | Computational Biology</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='matrix.js') }}"></script>
+</body>
+</html>
