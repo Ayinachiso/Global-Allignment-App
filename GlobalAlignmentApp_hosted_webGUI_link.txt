@@ -1,0 +1,11 @@
+==============================================================
+GLOBAL ALIGNMENT SYSTEM - SUBMISSION DETAILS
+==============================================================
+
+Name: Nweze Ayinachiso
+
+Matric Number: 22CG031891
+
+Live URL of Hosted Application: https://global-allignment-app-4tqk.onrender.com
+
+GitHub Repository Link: https://github.com/Ayinachiso/Global-Allignment-App.git
